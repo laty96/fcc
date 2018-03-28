@@ -17,17 +17,6 @@ app.get("/", (request, response) => {
   response.sendFile(__dirname + '/views/index.html')
 })
 
-// Simple in-memory store
-// const dreams = [
-//   "Find and count some sheep",
-//   "Climb a really tall mountain",
-//   "Wash the dishes"
-// ]
-
-// app.get("/dreams", (request, response) => {
-//   response.send(dreams)
-// })
-
 app.get('/ts', (req, res) => {
   res.sendFile(__dirname + '/views/ts.html')
 })
@@ -54,11 +43,16 @@ app.get('/ts/:time', (req, res) => {
   }
 })
 
-// could also use the POST body instead of query string: http://expressjs.com/en/api.html#req.body
-// app.post("/dreams", (request, response) => {
-//   dreams.push(request.query.dream)
-//   response.sendStatus(200)
-// })
+app.get('/rhpm', (req, res) => {
+  let b = req.headers['x-forwarded-for'].split(',')[0]
+  let c = req.headers['accept-language'].split(',')[0]
+  let d = req.headers['user-agent']
+  res.status(200).send({
+    "ipaddress": b,
+    "language": c,
+    "software": d
+  })
+})
 
 // listen for requests :)
 const listener = app.listen(process.env.PORT, () => {
