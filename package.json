@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "express": "^4.16.3",
-    "body-parser": "^1.18.2"
+    "body-parser": "^1.18.2",
+    "mongodb": "^3.0.5",
+    "validator": "^9.4.1"
   },
   "engines": {
     "node": "9.x"

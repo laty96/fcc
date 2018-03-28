@@ -5,12 +5,21 @@
 const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
+const validator = require('validator').isURL
+
+var mongodb = require('mongodb');
+
+var MongoClient = mongodb.MongoClient;
+
+var url = 'mongodb://admin:admin@ds227199.mlab.com:27199/shorten'
 
 // we've started you off with Express, 
 // but feel free to use whatever libs or frameworks you'd like through `package.json`.
 
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static('public'))
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
 
 // http://expressjs.com/en/starter/basic-routing.html
 app.get("/", (request, response) => {
@@ -54,6 +63,77 @@ app.get('/rhpm', (req, res) => {
   })
 })
 
+app.get('/sht' , (req, res) => {
+  res.sendFile(__dirname + '/views/shorten.html')
+})
+
+app.get('/sht/:id' , (req, res) => {
+  let id = +req.params.id
+  MongoClient.connect(url, function(err, client) {
+
+      console.log("Connected correctly to server");
+      let db = client.db('shorten');
+      let collection = db.collection('urls')
+      collection.find({id}).toArray((err, result) => {
+        console.log(result)
+        if (err) console.log(err)
+        if (result.length >= 1) {
+          res.redirect(result[0].url)
+        } else {
+          res.status(404).send({error: 'error',
+                               res: result})
+        }
+      })
+
+    });
+})
+
+app.get('/sht/new/*' , (req, res) => {
+  let link = req.params[0]
+  if (validator(link)) {
+    MongoClient.connect(url, function(err, client) {
+
+      console.log("Connected correctly to server");
+      let db = client.db('shorten');
+      let collection = db.collection('urls')
+      collection.find({url: link}).toArray((err, result) => {
+        console.log(result)
+        if (err) console.log(err)
+        if (result.length >= 1) {
+          res.status(200).send({
+            "original_url": link, 
+            "short_url": 'https://api-projects.glitch.me/sht/' + result[0].id 
+          })
+        } else {
+          collection.find().count((err, result2) => {
+            if (err) console.log(err)
+            if (result2 >= 0) {
+              let id = result2 + 1
+              collection.insertOne({
+                url: link,
+                id: id
+              }, (err, result3) => {
+                if (err) {
+                console.log(err)
+                res.status(500).send('error')
+                }
+                if (result3) {
+                  res.status(200).send({
+                    "original_url": link, 
+                    "short_url": 'https://api-projects.glitch.me/sht/' + id
+                  })
+                }
+                client.close()
+              });
+            }
+          })
+        }
+      })
+
+    });
+  
+  }
+})
 // listen for requests :)
 const listener = app.listen(process.env.PORT, () => {
   console.log(`Your app is listening on port ${listener.address().port}`)
